@@ -8,7 +8,9 @@ import {
   replaceImage,
 } from "../services/minutes.service";
 import { uploadImages } from "../services/upload.service";
+import { generatePDF } from "../helpers/pdf";
 import type { MeetingMinute, MinuteImage } from "../types/MeetingMinute";
+import { buildImageUrl } from "../helpers/image";
 
 export default function MinuteDetail() {
   const { id } = useParams();
@@ -59,43 +61,83 @@ export default function MinuteDetail() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* HEADER + PDF BUTTON */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">{minute.title}</h1>
-        <button
-          className="px-3 py-1 bg-gray-200 rounded"
-          onClick={() => navigate(-1)}
-        >
-          Back
-        </button>
+
+        <div className="space-x-2">
+          <button
+            className="px-3 py-1 bg-gray-200 rounded"
+            onClick={() => navigate(-1)}
+          >
+            Back
+          </button>
+
+          <button
+            className="px-3 py-1 bg-red-600 text-white rounded"
+            onClick={() =>
+              generatePDF("minute-pdf", `${minute.title}-report.pdf`)
+            }
+          >
+            Export PDF
+          </button>
+        </div>
       </div>
 
-      <div className="bg-white shadow rounded p-4 space-y-2">
-        <p>
-          <span className="font-semibold">Division:</span> {minute.division}
-        </p>
-        <p>
-          <span className="font-semibold">Speaker:</span> {minute.speaker}
-        </p>
-        <p>
-          <span className="font-semibold">Participants:</span>{" "}
-          {minute.numberOfParticipants}
-        </p>
-        <p>
-          <span className="font-semibold">Notes:</span>
-        </p>
-        <p className="whitespace-pre-line border rounded p-2 bg-gray-50">
-          {minute.notes}
-        </p>
-        <p>
-          <span className="font-semibold">Members:</span>{" "}
-          {minute.members.map(m => m.name).join(", ")}
-        </p>
-      </div>
+      {/* PDF CONTENT START */}
+      <div id="minute-pdf" className="space-y-6">
+        {/* INFO CARD */}
+        <div className="bg-white shadow rounded p-4 space-y-2">
+          <p>
+            <span className="font-semibold">Division:</span> {minute.division}
+          </p>
+          <p>
+            <span className="font-semibold">Speaker:</span> {minute.speaker}
+          </p>
+          <p>
+            <span className="font-semibold">Participants:</span>{" "}
+            {minute.numberOfParticipants}
+          </p>
+          <p>
+            <span className="font-semibold">Notes:</span>
+          </p>
+          <p className="whitespace-pre-line border rounded p-2 bg-gray-50">
+            {minute.notes}
+          </p>
+          <p>
+            <span className="font-semibold">Members:</span>{" "}
+            {minute.members.map(m => m.name).join(", ")}
+          </p>
+        </div>
 
-      {/* Images */}
+        {/* IMAGES INCLUDED IN PDF */}
+        <div className="bg-white shadow rounded p-4 space-y-3">
+          <h2 className="text-lg font-semibold">Images</h2>
+
+          {(!minute.images || minute.images.length === 0) && (
+            <p className="text-gray-500 text-sm">No images yet.</p>
+          )}
+
+          {minute.images && minute.images.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {minute.images.map(img => (
+                <img
+                  key={img.id}
+                  src={img.url}
+                  alt="Meeting"
+                  className="w-full h-32 object-cover rounded border"
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      {/* PDF CONTENT END */}
+
+      {/* IMAGE MANAGEMENT SECTION */}
       <div className="bg-white shadow rounded p-4 space-y-3">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Images</h2>
+          <h2 className="text-lg font-semibold">Manage Images</h2>
           <label className="text-sm text-blue-600 cursor-pointer">
             + Add Images
             <input
@@ -107,18 +149,15 @@ export default function MinuteDetail() {
           </label>
         </div>
 
-        {(!minute.images || minute.images.length === 0) && (
-          <p className="text-gray-500 text-sm">No images yet.</p>
-        )}
-
         {minute.images && minute.images.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {minute.images.map(img => (
               <div key={img.id} className="border rounded p-2 space-y-2">
-                {/* Adjust src with your backend static path if needed */}
                 <img
-                  src={img.url}
-                  alt=""
+                  key={img.id}
+                  src={buildImageUrl(img.url)}
+                  crossOrigin="anonymous"
+                  alt="Meeting"
                   className="w-full h-32 object-cover rounded"
                 />
                 <div className="flex justify-between items-center text-xs">
