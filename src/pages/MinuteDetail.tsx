@@ -8,9 +8,13 @@ import {
   replaceImage,
 } from "../services/minutes.service";
 import { uploadImages } from "../services/upload.service";
-import { generatePDF } from "../helpers/pdf";
 import type { MeetingMinute, MinuteImage } from "../types/MeetingMinute";
 import { buildImageUrl } from "../helpers/image";
+
+import ImageLightbox from "../components/ImageLightbox";
+import EditMinuteModal from "../components/EditMinuteModal";
+import { exportMinutePDF } from "../helpers/exportMinutePDF";
+import formatFullDate from "../utils/formatDate";
 
 export default function MinuteDetail() {
   const { id } = useParams();
@@ -18,6 +22,13 @@ export default function MinuteDetail() {
   const [minute, setMinute] = useState<MeetingMinute | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Lightbox
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  // Edit modal
+  const [openEditModal, setOpenEditModal] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -37,9 +48,11 @@ export default function MinuteDetail() {
 
   async function handleAddImages(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files) return;
+
     const files = Array.from(e.target.files);
-    const res = await uploadImages(files);
-    await addImagesToMinute(minuteId, res.map(f => f.url));
+    const uploaded = await uploadImages(files);
+
+    await addImagesToMinute(minuteId, uploaded.map((f) => f.url));
     await load();
   }
 
@@ -50,8 +63,9 @@ export default function MinuteDetail() {
   }
 
   async function handleReplaceImage(image: MinuteImage, file: File) {
-    const res = await uploadImages([file]);
-    const url = res[0].url;
+    const uploaded = await uploadImages([file]);
+    const url = uploaded[0].url;
+
     await replaceImage(minuteId, image.id, url);
     await load();
   }
@@ -59,124 +73,138 @@ export default function MinuteDetail() {
   if (loading) return <div className="p-6">Loading...</div>;
   if (!minute) return <div className="p-6">Minute not found</div>;
 
+  const images = minute.images || [];
+
   return (
     <div className="p-6 space-y-6">
-      {/* HEADER + PDF BUTTON */}
+      {/* HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{minute.title}</h1>
+        <h1 className="text-3xl font-bold text-gray-800">{minute.title}</h1>
 
         <div className="space-x-2">
           <button
-            className="px-3 py-1 bg-gray-200 rounded"
+            className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 transition"
             onClick={() => navigate(-1)}
           >
             Back
           </button>
 
           <button
-            className="px-3 py-1 bg-red-600 text-white rounded"
-            onClick={() =>
-              generatePDF("minute-pdf", `${minute.title}-report.pdf`)
-            }
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            onClick={() => setOpenEditModal(true)}
+          >
+            Edit
+          </button>
+
+          <button
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+            onClick={() => exportMinutePDF(minute, buildImageUrl)}
           >
             Export PDF
           </button>
         </div>
       </div>
 
-      {/* PDF CONTENT START */}
+      {/* MAIN CONTENT (info + notes) */}
       <div id="minute-pdf" className="space-y-6">
-        {/* INFO CARD */}
-        <div className="bg-white shadow rounded p-4 space-y-2">
-          <p>
-            <span className="font-semibold">Division:</span> {minute.division}
-          </p>
-          <p>
-            <span className="font-semibold">Speaker:</span> {minute.speaker}
-          </p>
-          <p>
-            <span className="font-semibold">Participants:</span>{" "}
-            {minute.numberOfParticipants}
-          </p>
-          <p>
-            <span className="font-semibold">Notes:</span>
-          </p>
-          <p className="whitespace-pre-line border rounded p-2 bg-gray-50">
-            {minute.notes}
-          </p>
-          <p>
-            <span className="font-semibold">Members:</span>{" "}
-            {minute.members.map(m => m.name).join(", ")}
-          </p>
-        </div>
-
-        {/* IMAGES INCLUDED IN PDF */}
-        <div className="bg-white shadow rounded p-4 space-y-3">
-          <h2 className="text-lg font-semibold">Images</h2>
-
-          {(!minute.images || minute.images.length === 0) && (
-            <p className="text-gray-500 text-sm">No images yet.</p>
-          )}
-
-          {minute.images && minute.images.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {minute.images.map(img => (
-                <img
-                  key={img.id}
-                  src={img.url}
-                  alt="Meeting"
-                  className="w-full h-32 object-cover rounded border"
-                />
-              ))}
+        <div className="bg-white rounded-xl shadow p-6 space-y-5">
+          {/* Info rows */}
+          <div className="space-y-1.5 text-gray-700 text-[15px]">
+            <div>
+              <span className="font-semibold text-gray-900">Division: </span>
+              {minute.division}
             </div>
-          )}
+            <div>
+              <span className="font-semibold text-gray-900">Speaker: </span>
+              {minute.speaker}
+            </div>
+            <div>
+              <span className="font-semibold text-gray-900">Participants: </span>
+              {minute.numberOfParticipants}
+            </div>
+            <div>
+              <span className="font-semibold text-gray-900">Members: </span>
+              {minute.members.map((m) => m.name).join(", ")}
+            </div>
+            <div>
+              <span className="font-semibold text-gray-900">Meeting Time: </span>
+              {formatFullDate(minute.createdAt)}
+            </div>
+          </div>
+
+          {/* Notes */}
+          <div>
+            <p className="font-semibold text-gray-900 mb-2 text-[15px]">
+              Notes:
+            </p>
+            <div className="p-4 bg-gray-50 border rounded-lg leading-relaxed whitespace-pre-line text-gray-800 text-[15px]">
+              {minute.notes}
+            </div>
+          </div>
         </div>
       </div>
-      {/* PDF CONTENT END */}
 
-      {/* IMAGE MANAGEMENT SECTION */}
-      <div className="bg-white shadow rounded p-4 space-y-3">
+      {/* MANAGE IMAGES */}
+      <div className="bg-white rounded-xl shadow p-6 space-y-3">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold">Manage Images</h2>
-          <label className="text-sm text-blue-600 cursor-pointer">
+          <h2 className="text-lg font-semibold text-gray-700">Manage Images</h2>
+
+          <label className="text-blue-600 cursor-pointer hover:underline text-sm">
             + Add Images
-            <input
-              type="file"
-              multiple
-              className="hidden"
-              onChange={handleAddImages}
-            />
+            <input type="file" multiple className="hidden" onChange={handleAddImages} />
           </label>
         </div>
 
-        {minute.images && minute.images.length > 0 && (
+        {images.length > 0 && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {minute.images.map(img => (
-              <div key={img.id} className="border rounded p-2 space-y-2">
+            {images.map((img, idx) => (
+              <div
+                key={img.id}
+                className="p-2 bg-gray-50 border rounded-lg shadow-sm space-y-2"
+              >
+                {/* Preview */}
                 <img
-                  key={img.id}
                   src={buildImageUrl(img.url)}
-                  crossOrigin="anonymous"
-                  alt="Meeting"
-                  className="w-full h-32 object-cover rounded"
+                  className="h-32 w-full object-cover rounded cursor-pointer hover:opacity-80"
+                  onClick={() => {
+                    setLightboxIndex(idx);
+                    setLightboxOpen(true);
+                  }}
                 />
-                <div className="flex justify-between items-center text-xs">
+
+                {/* Delete + Replace */}
+                <div className="flex justify-between items-center pt-1">
                   <button
-                    className="text-red-600"
+                    className="
+                      text-xs font-medium 
+                      text-red-600 hover:text-red-700
+                      border border-red-300 
+                      px-2 py-0.5 rounded-md
+                      hover:bg-red-50
+                    "
                     onClick={() => handleDeleteImage(img)}
                   >
                     Delete
                   </button>
 
-                  <label className="text-blue-600 cursor-pointer">
+                  <label
+                    className="
+                      text-xs font-medium 
+                      text-blue-600 hover:text-blue-700
+                      border border-blue-300 
+                      px-2 py-0.5 rounded-md
+                      cursor-pointer
+                      hover:bg-blue-50
+                    "
+                  >
                     Replace
                     <input
                       type="file"
                       className="hidden"
-                      onChange={e => {
-                        if (!e.target.files?.[0]) return;
-                        handleReplaceImage(img, e.target.files[0]);
-                      }}
+                      onChange={(e) =>
+                        e.target.files?.[0] &&
+                        handleReplaceImage(img, e.target.files[0])
+                      }
                     />
                   </label>
                 </div>
@@ -186,12 +214,25 @@ export default function MinuteDetail() {
         )}
       </div>
 
-      <button
-        className="px-4 py-2 bg-green-600 text-white rounded"
-        onClick={() => navigate(`/minutes/${minute.id}/edit`)}
-      >
-        Edit Minute
-      </button>
+      {/* LIGHTBOX */}
+      <ImageLightbox
+        open={lightboxOpen}
+        index={lightboxIndex}
+        images={images.map((img) => buildImageUrl(img.url))}
+        onClose={() => setLightboxOpen(false)}
+        onNext={() => setLightboxIndex((lightboxIndex + 1) % images.length)}
+        onPrev={() =>
+          setLightboxIndex((lightboxIndex - 1 + images.length) % images.length)
+        }
+      />
+
+      {/* EDIT MODAL */}
+      <EditMinuteModal
+        open={openEditModal}
+        minuteId={minute.id}
+        onClose={() => setOpenEditModal(false)}
+        onUpdated={load}
+      />
     </div>
   );
 }
