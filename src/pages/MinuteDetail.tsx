@@ -147,7 +147,7 @@ export default function MinuteDetail() {
       {/* MANAGE IMAGES */}
       <div className="bg-white rounded-xl shadow p-6 space-y-3">
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-gray-700">Manage Images</h2>
+          <h2 className="text-lg font-semibold text-gray-700">Meeting Attendance </h2>
 
           <label className="text-blue-600 cursor-pointer hover:underline text-sm">
             + Add Images

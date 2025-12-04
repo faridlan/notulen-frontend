@@ -50,7 +50,7 @@ const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg border border-gray-100 z-10">
+          <div className="absolute right-0 mt-2 w-44 bg-white text-gray-800 rounded-lg shadow-lg border border-gray-100 z-10 overflow-hidden">
             <button
               onClick={() => {
                 localStorage.removeItem("auth");
