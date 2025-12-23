@@ -20,11 +20,14 @@ export default function CreateMinuteModal({ open, onClose, onCreated }: Props) {
   const [form, setForm] = useState({
   division: "",
   title: "",
+  meetingDate: "",
+  meetingType: "Rapat Pengurus" as string,
+  summary: "",
   notes: "",
   speaker: "",
   numberOfParticipants: 0,
   members: [] as string[],
-  images: [] as string[],  // <─ ADD HERE
+  images: [] as string[],
 
   });
 
@@ -44,6 +47,9 @@ async function handleCreate() {
     const minute = await createMinute({
       division: form.division,
       title: form.title,
+      meetingDate: form.meetingDate,
+      meetingType: form.meetingType,
+      summary: form.summary,
       notes: form.notes,
       speaker: form.speaker,
       numberOfParticipants: form.numberOfParticipants,
@@ -81,13 +87,26 @@ async function handleFiles(files: File[]) {
     <Modal open={open} onClose={onClose} title="Create New Meeting Minute" maxWidth="max-w-2xl">
       <div className="space-y-4">
         
+        {/* Meeting Date */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Meeting Date</label>
+          <input
+            type="datetime-local"
+            className="border rounded w-full px-3 py-2"
+            value={form.meetingDate}
+            onChange={(e) =>
+              setForm({ ...form, meetingDate: e.target.value })
+            }
+          />
+      </div>
+
         {/* Division */}
         <div>
           <label className="block text-sm font-medium mb-1">Division</label>
           <input
-  className={`border rounded w-full px-3 py-2 ${
-    !form.division.trim() ? "border-red-500" : ""
-  }`}
+            className={`border rounded w-full px-3 py-2 ${
+              !form.division.trim() ? "border-red-500" : ""
+            }`}
             value={form.division}
             onChange={(e) => setForm({ ...form, division: e.target.value })}
           />
@@ -97,24 +116,54 @@ async function handleFiles(files: File[]) {
         <div>
           <label className="block text-sm font-medium mb-1">Title</label>
           <input
-  className={`border rounded w-full px-3 py-2 ${
-    !form.division.trim() ? "border-red-500" : ""
-  }`}
+          className={`border rounded w-full px-3 py-2 ${
+            !form.division.trim() ? "border-red-500" : ""
+          }`}
             value={form.title}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
           />
+        </div>
+        
+        {/* Meeting Type */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Meeting Type</label>
+          <select
+            className="border rounded w-full px-3 py-2"
+            value={form.meetingType}
+            onChange={(e) =>
+              setForm({ ...form, meetingType: e.target.value as any })
+            }
+          >
+            <option value="Rapat Pengurus">Rapat Pengurus</option>
+            <option value="Rapat Direksi">Rapat Direksi</option>
+            <option value="Rapat Divisi">Rapat Divisi</option>
+            <option value="Rapat Semua Pegawai">Rapat Semua Pegawai</option>
+          </select>
         </div>
 
         {/* Notes */}
         <div>
           <label className="block text-sm font-medium mb-1">Notes</label>
           <textarea
-  className={`border rounded w-full px-3 py-2 ${
-    !form.division.trim() ? "border-red-500" : ""
-  }`}
+            className={`border rounded w-full px-3 py-2 ${
+              !form.division.trim() ? "border-red-500" : ""
+            }`}
             rows={4}
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            />
+        </div>
+
+        {/* Summary */}
+        <div>
+          <label className="block text-sm font-medium mb-1">Summary</label>
+          <textarea
+            rows={3}
+            className="border rounded w-full px-3 py-2"
+            value={form.summary}
+            onChange={(e) =>
+              setForm({ ...form, summary: e.target.value })
+            }
           />
         </div>
 
@@ -122,9 +171,9 @@ async function handleFiles(files: File[]) {
         <div>
           <label className="block text-sm font-medium mb-1">Speaker</label>
           <input
-  className={`border rounded w-full px-3 py-2 ${
-    !form.division.trim() ? "border-red-500" : ""
-  }`}
+            className={`border rounded w-full px-3 py-2 ${
+              !form.division.trim() ? "border-red-500" : ""
+            }`}
             value={form.speaker}
             onChange={(e) => setForm({ ...form, speaker: e.target.value })}
           />
@@ -135,9 +184,9 @@ async function handleFiles(files: File[]) {
           <label className="block text-sm font-medium mb-1">Number of Participants</label>
           <input
             type="number"
-  className={`border rounded w-full px-3 py-2 ${
-    form.numberOfParticipants <= 0 ? "border-red-500" : ""
-  }`}
+            className={`border rounded w-full px-3 py-2 ${
+              form.numberOfParticipants <= 0 ? "border-red-500" : ""
+            }`}
             value={form.numberOfParticipants}
             onChange={(e) =>
               setForm({ ...form, numberOfParticipants: Number(e.target.value) })
@@ -153,9 +202,9 @@ async function handleFiles(files: File[]) {
         />
 
         {/* Upload Images */}
-<div className={`${form.images.length === 0 ? "border border-red-500 rounded p-2" : ""}`}>
-  <FileUploader onUpload={handleFiles} />
-</div>
+        <div className={`${form.images.length === 0 ? "border border-red-500 rounded p-2" : ""}`}>
+          <FileUploader onUpload={handleFiles} />
+        </div>
 
         {/* Submit */}
         <button

@@ -51,6 +51,7 @@ export default function TagInput({ value, onChange, label }: Props) {
           >
             {name}
             <button
+              type="button"
               onClick={() => removeMember(idx)}
               className="text-blue-600 hover:text-blue-800 text-xs"
             >
@@ -71,15 +72,16 @@ export default function TagInput({ value, onChange, label }: Props) {
         />
 
         <button
+          type="button"
           onClick={addMember}
           className="
             px-3 py-2 
-            bg-blue-600 hover:bg-blue-700 
+            bg-[#005BAA] hover:bg-[#0668C2]
             text-white rounded 
             text-sm
           "
         >
-          Tambah
+          Add
         </button>
       </div>
     </div>

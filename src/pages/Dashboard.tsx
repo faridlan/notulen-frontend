@@ -134,19 +134,6 @@ export default function Dashboard() {
             View All Results
           </button>
 
-          <button
-            className="px-4 py-2 bg-[#005BAA] hover:bg-[#0668C2] text-white rounded-lg"
-            onClick={() => navigate("/minutes/create")}
-          >
-            + New Minute
-          </button>
-
-          <button
-            className="px-4 py-2 bg-[#005BAA] hover:bg-[#0668C2] text-white rounded-lg"
-            onClick={() => navigate("/results/create")}
-          >
-            + New Result
-          </button>
         </div>
       </div>
     </div>

@@ -128,7 +128,19 @@ export default function MinuteDetail() {
             </div>
             <div>
               <span className="font-semibold text-gray-900">Meeting Time: </span>
-              {formatFullDate(minute.createdAt)}
+              {formatFullDate(minute.meetingDate)}
+            </div>
+            <div>
+              <span className="font-semibold text-gray-900">Meeting Type: </span>
+              {minute.meetingType.replaceAll("_", " ")}
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 mb-2 text-[15px]">
+                Summary:
+              </p>
+              <div className="p-4 bg-gray-50 border rounded-lg text-gray-800 text-[15px]">
+                {minute.summary}
+              </div>
             </div>
           </div>
 

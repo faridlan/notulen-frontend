@@ -1,9 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
-import MinutesList from "./pages/MinutesList";
 import MinuteDetail from "./pages/MinuteDetail";
 
-import ResultsList from "./pages/ResultsList";
 import ResultDetail from "./pages/ResultDetail";
 
 import Dashboard from "./pages/Dashboard";
@@ -15,6 +13,8 @@ import { ToastProvider } from "./components/common/ToastProvider";
 import Layout from "./components/Layout";
 import PublicRoute from "./components/routes/PublicRoute";
 import ProtectedRoute from "./components/routes/ProtectedRoute";
+import MinutesPage from "./pages/MinutePage";
+import ResultPage from "./pages/ResultPage";
 
 export default function App() {
   return (
@@ -48,7 +48,7 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Layout>
-                  <MinutesList />
+                  <MinutesPage  />
                 </Layout>
               </ProtectedRoute>
             }
@@ -70,7 +70,7 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Layout>
-                  <ResultsList />
+                  <ResultPage />
                 </Layout>
               </ProtectedRoute>
             }

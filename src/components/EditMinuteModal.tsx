@@ -23,6 +23,9 @@ const EditMinuteModal: React.FC<Props> = ({
   const [form, setForm] = useState({
     division: "",
     title: "",
+    meetingDate: "",
+    meetingType: "RAPAT_PENGURUS" as string,
+    summary: "",
     notes: "",
     speaker: "",
     numberOfParticipants: 0,
@@ -33,6 +36,7 @@ const EditMinuteModal: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  /* LOAD EXISTING DATA */
   useEffect(() => {
     async function load() {
       if (!minuteId) return;
@@ -43,11 +47,14 @@ const EditMinuteModal: React.FC<Props> = ({
       setForm({
         division: minute.division,
         title: minute.title,
+        meetingDate: minute.meetingDate.slice(0, 16), // for datetime-local
+        meetingType: minute.meetingType,
+        summary: minute.summary,
         notes: minute.notes,
         speaker: minute.speaker,
         numberOfParticipants: minute.numberOfParticipants,
         members: minute.members.map((m) => m.name),
-        images: minute.images?.map((img) => img.url) || [],  
+        images: minute.images?.map((img) => img.url) || [],
       });
 
       setLoading(false);
@@ -56,98 +63,169 @@ const EditMinuteModal: React.FC<Props> = ({
     if (open) load();
   }, [open, minuteId]);
 
-async function handleSave() {
-  if (!minuteId) return;
+  /* SAVE */
+  async function handleSave() {
+    if (!minuteId) return;
 
-  const error = validateMinute(form);
-  if (error) {
-    showToast(error, "error");
-    return;
+    const error = validateMinute(form);
+    if (error) {
+      showToast(error, "error");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      await updateMinute(minuteId, {
+        division: form.division,
+        title: form.title,
+        meetingDate: form.meetingDate,
+        meetingType: form.meetingType,
+        summary: form.summary,
+        notes: form.notes,
+        speaker: form.speaker,
+        numberOfParticipants: form.numberOfParticipants,
+        members: form.members.map((name) => ({ name })),
+      });
+
+      showToast("Minute updated!", "success");
+      onUpdated();
+      onClose();
+    } catch {
+      showToast("Update failed", "error");
+    } finally {
+      setSaving(false);
+    }
   }
-
-  try {
-    setSaving(true);
-
-    await updateMinute(minuteId, {
-      division: form.division,
-      title: form.title,
-      notes: form.notes,
-      speaker: form.speaker,
-      numberOfParticipants: form.numberOfParticipants,
-      members: form.members.map((name) => ({ name })),
-    });
-
-    showToast("Minute updated!", "success");
-    onUpdated();
-    onClose();
-  } catch {
-    showToast("Update failed", "error");
-  } finally {
-    setSaving(false);
-  }
-}
 
   return (
-    <Modal open={open} onClose={onClose} title="Edit Meeting Minute" maxWidth="max-w-xl">
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Edit Meeting Minute"
+      maxWidth="max-w-xl"
+    >
       {loading ? (
         <p>Loading...</p>
       ) : (
         <div className="space-y-4">
-
+          {/* Division */}
           <div>
             <label className="block text-sm font-medium mb-1">Division</label>
             <input
-                className={`border rounded w-full px-3 py-2 ${
-    !form.division.trim() ? "border-red-500" : ""
-  }`}
+              className={`border rounded w-full px-3 py-2 ${
+                !form.division.trim() ? "border-red-500" : ""
+              }`}
               value={form.division}
-              onChange={(e) => setForm({ ...form, division: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, division: e.target.value })
+              }
             />
           </div>
 
+          {/* Title */}
           <div>
             <label className="block text-sm font-medium mb-1">Title</label>
             <input
-                className={`border rounded w-full px-3 py-2 ${
-    !form.division.trim() ? "border-red-500" : ""
-  }`}
+              className={`border rounded w-full px-3 py-2 ${
+                !form.title.trim() ? "border-red-500" : ""
+              }`}
               value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, title: e.target.value })
+              }
             />
           </div>
 
+          {/* Meeting Date */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Meeting Date
+            </label>
+            <input
+              type="datetime-local"
+              className="border rounded w-full px-3 py-2"
+              value={form.meetingDate}
+              onChange={(e) =>
+                setForm({ ...form, meetingDate: e.target.value })
+              }
+            />
+          </div>
+
+          {/* Meeting Type */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Meeting Type
+            </label>
+            <select
+              className="border rounded w-full px-3 py-2"
+              value={form.meetingType}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  meetingType: e.target.value as string,
+                })
+              }
+            >
+              <option value="Rapat Pengurus">Rapat Pengurus</option>
+              <option value="Rapat Direksi">Rapat Direksi</option>
+              <option value="Rapat Divisi">Rapat Divisi</option>
+              <option value="Rapat Semua Pegawai">
+                Rapat Semua Pegawai
+              </option>
+            </select>
+          </div>
+
+          {/* Summary */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Summary</label>
+            <textarea
+              rows={3}
+              className="border rounded w-full px-3 py-2"
+              value={form.summary}
+              onChange={(e) =>
+                setForm({ ...form, summary: e.target.value })
+              }
+            />
+          </div>
+
+          {/* Notes */}
           <div>
             <label className="block text-sm font-medium mb-1">Notes</label>
             <textarea
-                className={`border rounded w-full px-3 py-2 ${
-    !form.division.trim() ? "border-red-500" : ""
-  }`}
               rows={4}
+              className={`border rounded w-full px-3 py-2 ${
+                !form.notes.trim() ? "border-red-500" : ""
+              }`}
               value={form.notes}
-              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, notes: e.target.value })
+              }
             />
           </div>
 
+          {/* Speaker */}
           <div>
             <label className="block text-sm font-medium mb-1">Speaker</label>
             <input
-                className={`border rounded w-full px-3 py-2 ${
-    !form.division.trim() ? "border-red-500" : ""
-  }`}
+              className="border rounded w-full px-3 py-2"
               value={form.speaker}
-              onChange={(e) => setForm({ ...form, speaker: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, speaker: e.target.value })
+              }
             />
           </div>
 
+          {/* Participants */}
           <div>
             <label className="block text-sm font-medium mb-1">
               Number of Participants
             </label>
             <input
               type="number"
-                className={`border rounded w-full px-3 py-2 ${
-    form.numberOfParticipants <= 0 ? "border-red-500" : ""
-  }`}
+              className={`border rounded w-full px-3 py-2 ${
+                form.numberOfParticipants <= 0 ? "border-red-500" : ""
+              }`}
               value={form.numberOfParticipants}
               onChange={(e) =>
                 setForm({
@@ -158,11 +236,13 @@ async function handleSave() {
             />
           </div>
 
-          {/* MEMBERS TAG INPUT */}
+          {/* MEMBERS */}
           <TagInput
             label="List Participants (Members)"
             value={form.members}
-            onChange={(members) => setForm({ ...form, members })}
+            onChange={(members) =>
+              setForm({ ...form, members })
+            }
           />
 
           <button
