@@ -116,7 +116,7 @@ export default function MinuteForm({ onCreated }: Props) {
           >
             <option>Rapat Pengurus</option>
             <option>Rapat Direksi</option>
-            <option>Rapat Divisi</option>
+            <option>Rapat Per Bagian</option>
             <option>Rapat Semua Pegawai</option>
           </select>
         </div>
