@@ -84,6 +84,31 @@ export default function MinuteForm({ onCreated }: Props) {
     }));
   }
 
+  function handleAutoNumbering(
+  e: React.KeyboardEvent<HTMLTextAreaElement>,
+  field: "summary" | "notes"
+) {
+  if (e.key !== "Enter") return;
+
+  const value = form[field];
+  const lines = value.split("\n");
+  const lastLine = lines[lines.length - 1];
+
+  const match = lastLine.match(/^(\d+)\.\s+/);
+  if (!match) return;
+
+  e.preventDefault();
+
+  const nextNumber = Number(match[1]) + 1;
+  const newValue = value + `\n${nextNumber}. `;
+
+  setForm((prev) => ({
+    ...prev,
+    [field]: newValue,
+  }));
+}
+
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -189,26 +214,38 @@ export default function MinuteForm({ onCreated }: Props) {
         <div className="space-y-4 border-t pt-4">
           <div>
             <label className="block text-sm font-medium mb-1">Summary</label>
-            <textarea
-              rows={3}
-              className="border rounded w-full px-3 py-2"
-              value={form.summary}
-              onChange={(e) =>
-                setForm({ ...form, summary: e.target.value })
-              }
-            />
+<textarea
+  rows={3}
+  className="border rounded w-full px-3 py-2"
+  placeholder={`Use numbered points if needed:\n1. Key discussion\n2. Conclusion`}
+  value={form.summary}
+  onChange={(e) =>
+    setForm({ ...form, summary: e.target.value })
+  }
+  onKeyDown={(e) => handleAutoNumbering(e, "summary")}
+/>
+
+<p className="text-xs text-gray-500 mt-1">
+  Tip: Press <strong>Enter</strong> after <strong>1.</strong> to auto-create next point
+</p>
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1">Notes</label>
-            <textarea
-              rows={4}
-              className="border rounded w-full px-3 py-2"
-              value={form.notes}
-              onChange={(e) =>
-                setForm({ ...form, notes: e.target.value })
-              }
-            />
+<textarea
+  rows={4}
+  className="border rounded w-full px-3 py-2"
+  placeholder={`Example:\n1. Opening\n2. Discussion\n3. Action items`}
+  value={form.notes}
+  onChange={(e) =>
+    setForm({ ...form, notes: e.target.value })
+  }
+  onKeyDown={(e) => handleAutoNumbering(e, "notes")}
+/>
+
+<p className="text-xs text-gray-500 mt-1">
+  Supports numbered points (1., 2., 3.) — auto continues on Enter
+</p>
           </div>
 
           <FileUploader onUpload={handleFiles} />

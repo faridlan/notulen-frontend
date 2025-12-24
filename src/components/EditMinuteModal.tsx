@@ -49,7 +49,7 @@ const EditMinuteModal: React.FC<Props> = ({
         title: minute.title,
         meetingDate: minute.meetingDate.slice(0, 16), // for datetime-local
         meetingType: minute.meetingType,
-        summary: minute.summary,
+        summary: minute.summary || "",
         notes: minute.notes,
         speaker: minute.speaker,
         numberOfParticipants: minute.numberOfParticipants,
@@ -97,6 +97,31 @@ const EditMinuteModal: React.FC<Props> = ({
       setSaving(false);
     }
   }
+
+  function handleAutoNumbering(
+  e: React.KeyboardEvent<HTMLTextAreaElement>,
+  field: "summary" | "notes"
+) {
+  if (e.key !== "Enter") return;
+
+  const value = form[field];
+  const lines = value.split("\n");
+  const lastLine = lines[lines.length - 1];
+
+  const match = lastLine.match(/^(\d+)\.\s+/);
+  if (!match) return;
+
+  e.preventDefault();
+
+  const nextNumber = Number(match[1]) + 1;
+  const newValue = value + `\n${nextNumber}. `;
+
+  setForm((prev) => ({
+    ...prev,
+    [field]: newValue,
+  }));
+}
+
 
   return (
     <Modal
@@ -177,32 +202,40 @@ const EditMinuteModal: React.FC<Props> = ({
           </div>
 
           {/* Summary */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Summary</label>
-            <textarea
-              rows={3}
-              className="border rounded w-full px-3 py-2"
-              value={form.summary}
-              onChange={(e) =>
-                setForm({ ...form, summary: e.target.value })
-              }
-            />
-          </div>
+<div>
+  <label className="block text-sm font-medium mb-1">Summary</label>
+  <textarea
+    rows={3}
+    className="border rounded w-full px-3 py-2"
+    placeholder={`Use numbered points:\n1. Main outcome\n2. Key decision`}
+    value={form.summary}
+    onChange={(e) =>
+      setForm({ ...form, summary: e.target.value })
+    }
+    onKeyDown={(e) => handleAutoNumbering(e, "summary")}
+  />
+  <p className="text-xs text-gray-500 mt-1">
+    Press <strong>Enter</strong> after <strong>1.</strong> to continue numbering
+  </p>
+</div>
 
           {/* Notes */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Notes</label>
-            <textarea
-              rows={4}
-              className={`border rounded w-full px-3 py-2 ${
-                !form.notes.trim() ? "border-red-500" : ""
-              }`}
-              value={form.notes}
-              onChange={(e) =>
-                setForm({ ...form, notes: e.target.value })
-              }
-            />
-          </div>
+<div>
+  <label className="block text-sm font-medium mb-1">Notes</label>
+  <textarea
+    rows={4}
+    className="border rounded w-full px-3 py-2"
+    placeholder={`Example:\n1. Opening\n2. Discussion\n3. Action items`}
+    value={form.notes}
+    onChange={(e) =>
+      setForm({ ...form, notes: e.target.value })
+    }
+    onKeyDown={(e) => handleAutoNumbering(e, "notes")}
+  />
+  <p className="text-xs text-gray-500 mt-1">
+    Auto continues numbered list on Enter
+  </p>
+</div>
 
           {/* Speaker */}
           <div>

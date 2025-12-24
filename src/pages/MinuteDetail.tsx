@@ -15,6 +15,7 @@ import ImageLightbox from "../components/ImageLightbox";
 import EditMinuteModal from "../components/EditMinuteModal";
 import { exportMinutePDF } from "../helpers/exportMinutePDF";
 import formatFullDate from "../utils/formatDate";
+import { renderNumberedText } from "../utils/renderNumberedText";
 
 export default function MinuteDetail() {
   const { id } = useParams();
@@ -139,7 +140,7 @@ export default function MinuteDetail() {
                 Summary:
               </p>
               <div className="p-4 bg-gray-50 border rounded-lg text-gray-800 text-[15px]">
-                {minute.summary}
+                {renderNumberedText(minute.summary)}
               </div>
             </div>
           </div>
@@ -150,7 +151,7 @@ export default function MinuteDetail() {
               Notes:
             </p>
             <div className="p-4 bg-gray-50 border rounded-lg leading-relaxed whitespace-pre-line text-gray-800 text-[15px]">
-              {minute.notes}
+              {renderNumberedText(minute.notes)}
             </div>
           </div>
         </div>

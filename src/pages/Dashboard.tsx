@@ -7,6 +7,8 @@ import { getResults } from "../services/results.service";
 
 import type { MeetingMinute } from "../types/MeetingMinute";
 import type { MeetingResult } from "../types/MeetingResult";
+import { summarizeNumberedText } from "../helpers/summaryText";
+
 
 import formatFullDate from "../utils/formatDate";
 
@@ -93,12 +95,19 @@ export default function Dashboard() {
               key={r.id}
               className="border-b py-2 flex justify-between items-center"
             >
-              <div>
-                <p className="font-medium">{r.target}</p>
-                <p className="text-sm text-gray-600">
-                  Achievement: {r.achievement}%
-                </p>
-              </div>
+<div>
+  <p className="font-medium text-gray-900">
+    {r.minute.title}
+  </p>
+
+  <p className="text-sm text-gray-600">
+    1. {summarizeNumberedText(r.target)}
+  </p>
+
+  <p className="text-xs text-gray-500 mt-0.5">
+    Achievement: {r.achievement}%
+  </p>
+</div>
 
               <button
                 className="text-blue-600 hover:underline text-sm"

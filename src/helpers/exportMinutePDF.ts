@@ -1,9 +1,65 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import jsPDF from "jspdf";
 import type { MeetingMinute } from "../types/MeetingMinute";
 import formatFullDate from "../utils/formatDate";
 import logoImg from "../assets/logo-full-one-color.png";
 
+/* ============================
+   HELPER: Render Numbered Text
+   ============================ */
+function renderNumberedSection(
+  doc: jsPDF,
+  text: string | undefined,
+  startX: number,
+  startY: number,
+  maxWidth: number,
+  lineHeight = 14
+): number {
+  if (!text || !text.trim()) {
+    doc.text("-", startX, startY);
+    return startY + lineHeight;
+  }
+
+  const lines = text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  let y = startY;
+
+  const isNumbered = lines.every((l) => /^\d+\.\s+/.test(l));
+
+  // Fallback: normal paragraph
+  if (!isNumbered) {
+    const split = doc.splitTextToSize(text, maxWidth);
+    doc.text(split, startX, y);
+    return y + split.length * lineHeight;
+  }
+
+  // Proper numbered list
+  lines.forEach((line) => {
+    const numberMatch = line.match(/^(\d+)\./);
+    const numberLabel = numberMatch ? `${numberMatch[1]})` : "•";
+    const cleanText = line.replace(/^\d+\.\s*/, "");
+
+    const numberWidth = 20;
+    const textX = startX + numberWidth;
+
+    // number
+    doc.text(numberLabel, startX, y);
+
+    // wrapped text
+    const wrapped = doc.splitTextToSize(cleanText, maxWidth - numberWidth);
+    doc.text(wrapped, textX, y);
+
+    y += wrapped.length * lineHeight;
+  });
+
+  return y;
+}
+
+/* ============================
+   MAIN EXPORT FUNCTION
+   ============================ */
 export async function exportMinutePDF(
   minute: MeetingMinute,
   resolveImageUrl: (url: string) => string
@@ -15,25 +71,21 @@ export async function exportMinutePDF(
 
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const marginX = 50; // Standard corporate margin
+  const marginX = 50;
   let y = 50;
 
-  const primaryColor: [number, number, number] = [0, 51, 102]; // Dark Navy Blue
+  const primaryColor: [number, number, number] = [0, 51, 102];
   const secondaryColor: [number, number, number] = [100, 100, 100];
 
-  // ---------- 1. LETTERHEAD ----------
+  /* ---------- LETTERHEAD ---------- */
   try {
-    // Convert logo to base64 so it's ready for the PDF
     const logoData = await loadImageAsDataUrl(logoImg);
-    // Parameters: image, type, x, y, width, height
     doc.addImage(logoData, "PNG", marginX, y - 15, 100, 40);
-  } catch (error) {
-    console.error("Logo failed to load", error);
+  } catch {
     doc.setFont("helvetica", "bold");
     doc.text("COMPANY NAME", marginX, y);
   }
 
-  // Company Address (Right Aligned)
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...secondaryColor);
@@ -44,22 +96,22 @@ export async function exportMinutePDF(
   y += 50;
   doc.setDrawColor(...primaryColor);
   doc.setLineWidth(1.5);
-  doc.line(marginX, y, pageWidth - marginX, y); // Decorative line
+  doc.line(marginX, y, pageWidth - marginX, y);
   y += 35;
 
-  // ---------- 2. REPORT TITLE ----------
+  /* ---------- TITLE ---------- */
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(0, 0, 0);
   doc.text("NOTULEN RAPAT", pageWidth / 2, y, { align: "center" });
   y += 30;
 
-  // ---------- 3. INFO SECTION (Table Style) ----------
+  /* ---------- INFO TABLE ---------- */
   const infoData = [
     ["Title:", minute.title],
     ["Meeting Date:", formatFullDate(minute.meetingDate)],
     ["Division:", minute.division],
-    ["Speaker:", minute.speaker],
+    ["Speaker:", minute.speaker || "-"],
     ["Participants:", String(minute.numberOfParticipants)],
     ["Members:", minute.members?.map((m) => m.name).join(", ") || "-"],
   ];
@@ -68,9 +120,8 @@ export async function exportMinutePDF(
   infoData.forEach(([label, value]) => {
     doc.setFont("helvetica", "bold");
     doc.text(label, marginX, y);
-    doc.setFont("helvetica", "normal");
 
-    // Wrap text for long member lists
+    doc.setFont("helvetica", "normal");
     const splitValue = doc.splitTextToSize(value, pageWidth - marginX - 150);
     doc.text(splitValue, marginX + 100, y);
     y += splitValue.length * 14 + 4;
@@ -81,14 +132,13 @@ export async function exportMinutePDF(
   doc.line(marginX, y, pageWidth - marginX, y);
   y += 25;
 
-  // ---------- 4. SUMMARY & NOTES ----------
+  /* ---------- SUMMARY & NOTES ---------- */
   const sections = [
     { title: "Summary", content: minute.summary },
     { title: "Discussion Notes", content: minute.notes },
   ];
 
   sections.forEach((section) => {
-    // Check for page overflow
     if (y > pageHeight - 150) {
       doc.addPage();
       y = 50;
@@ -98,47 +148,45 @@ export async function exportMinutePDF(
     doc.setFontSize(12);
     doc.setTextColor(...primaryColor);
     doc.text(section.title, marginX, y);
-    y += 15;
+    y += 16;
 
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(30, 30, 30);
-    const splitContent = doc.splitTextToSize(
-      section.content || "-",
+
+    y = renderNumberedSection(
+      doc,
+      section.content,
+      marginX,
+      y,
       pageWidth - marginX * 2
     );
-    doc.text(splitContent, marginX, y);
-    y += splitContent.length * 14 + 25;
+
+    y += 25;
   });
 
-  // ---------- 5. SIGNATURE SECTION ----------
-  // Ensure signature isn't cut off
+  /* ---------- SIGNATURE ---------- */
   if (y > pageHeight - 120) {
     doc.addPage();
     y = 50;
   } else {
-    y = pageHeight - 130; // Position near bottom
+    y = pageHeight - 130;
   }
 
   const signatureX = pageWidth - marginX - 150;
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(0, 0, 0);
   doc.text(`Ciamis, ${new Date().toLocaleDateString()}`, signatureX, y);
 
   y += 15;
   doc.text("Notulen,", signatureX, y);
 
-  y += 50; // Space for physical signature
-  doc.setDrawColor(0, 0, 0);
-  doc.setLineWidth(0.5);
-  doc.line(signatureX, y, signatureX + 130, y); // Signature line
-
+  y += 50;
+  doc.line(signatureX, y, signatureX + 130, y);
   y += 12;
   doc.setFont("helvetica", "bold");
   doc.text("Salsabila Putri, R. S.Kom", signatureX, y);
 
-  // ---------- 6. IMAGES (Separate Page) ----------
+  /* ---------- IMAGES ---------- */
   const images = minute.images || [];
   if (images.length > 0) {
     doc.addPage();
@@ -154,7 +202,6 @@ export async function exportMinutePDF(
       const col = i % 2;
       const xPos = marginX + col * (imgWidth + 20);
 
-      // New page if next row exceeds height
       if (y + imgHeight > pageHeight - 50) {
         doc.addPage();
         y = 50;
@@ -165,21 +212,23 @@ export async function exportMinutePDF(
           resolveImageUrl(images[i].url)
         );
         doc.addImage(dataUrl, "JPEG", xPos, y, imgWidth, imgHeight);
-      } catch (e) {
+      } catch {
         doc.rect(xPos, y, imgWidth, imgHeight);
         doc.text("Image N/A", xPos + 10, y + 20);
       }
 
-      if (col === 1) y += imgHeight + 20; // Move to next row after 2 images
+      if (col === 1) y += imgHeight + 20;
     }
   }
 
   doc.save(`Minute_Report_${minute.id}.pdf`);
 }
 
+/* ---------- IMAGE LOADER ---------- */
 async function loadImageAsDataUrl(url: string): Promise<string> {
   const res = await fetch(url);
   const blob = await res.blob();
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);

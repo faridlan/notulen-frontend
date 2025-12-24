@@ -9,6 +9,7 @@ import ConfirmDialog from "./common/ConfirmDialog";
 import { useToast } from "./common/ToastProvider";
 import formatFullDate from "../utils/formatDate";
 import EditResultModal from "./EditResultModal";
+import { summarizeNumberedText } from "../helpers/summaryText";
 
 interface Props {
   refreshTrigger: number;
@@ -66,12 +67,11 @@ export default function ResultList({ refreshTrigger }: Props) {
     // SEARCH
     if (search.trim()) {
       const s = search.toLowerCase();
-      list = list.filter(
-        (r) =>
-          r.target.toLowerCase().includes(s) ||
-          r.description?.toLowerCase().includes(s) ||
-          r.minute.title.toLowerCase().includes(s)
-      );
+list = list.filter(
+  (r) =>
+    r.minute.title.toLowerCase().includes(s) ||
+    r.description?.toLowerCase().includes(s)
+);
     }
 
     // SORT
@@ -137,11 +137,11 @@ export default function ResultList({ refreshTrigger }: Props) {
           <thead className="bg-gray-100 border-b">
             <tr>
               {[
-                { key: "id", label: "ID" },
-                { key: "target", label: "Target" },
-                { key: "achievement", label: "Achievement (%)" },
-                { key: "createdAt", label: "Created" },
-              ].map((col) => (
+  { key: "id", label: "ID" },
+  { key: "meeting", label: "Meeting" }, // virtual column
+  { key: "achievement", label: "Achievement (%)" },
+  { key: "createdAt", label: "Created" },
+].map((col) => (
                 <th
                   key={col.key}
                   onClick={() =>
@@ -158,7 +158,6 @@ export default function ResultList({ refreshTrigger }: Props) {
                 </th>
               ))}
 
-              <th className="px-4 py-2 text-left">Meeting</th>
               <th className="px-4 py-2 text-left">Actions</th>
             </tr>
           </thead>
@@ -177,21 +176,21 @@ export default function ResultList({ refreshTrigger }: Props) {
               paginated.map((r) => (
                 <tr key={r.id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-2">{r.id}</td>
-                  <td className="px-4 py-2 font-medium">{r.target}</td>
+                  <td className="px-4 py-2">
+  <div className="font-medium text-gray-900 line-clamp-1">
+    {r.minute.title}
+  </div>
+  <div className="text-xs text-gray-500">
+    1. {summarizeNumberedText(r.target)}
+  </div>
+  <div className="text-xs text-gray-500">
+    Minute ID: {r.minute.id}
+  </div>
+  
+</td>
                   <td className="px-4 py-2">{r.achievement}%</td>
                   <td className="px-4 py-2 text-xs text-gray-600">
                     {formatFullDate(r.createdAt)}
-                  </td>
-
-                  <td className="px-4 py-2">
-                    <button
-                      onClick={() =>
-                        navigate(`/minutes/${r.minute.id}`)
-                      }
-                      className="text-blue-600 hover:underline"
-                    >
-                      {r.minute.title}
-                    </button>
                   </td>
 
                   <td className="px-4 py-2 space-x-3">

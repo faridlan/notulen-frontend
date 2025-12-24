@@ -81,6 +81,29 @@ export default function ResultForm({ onCreated }: Props) {
     }
   }
 
+  function handleAutoNumbering(
+  e: React.KeyboardEvent<HTMLTextAreaElement>
+) {
+  if (e.key !== "Enter") return;
+
+  const value = form.target;
+  const lines = value.split("\n");
+  const lastLine = lines[lines.length - 1];
+
+  const match = lastLine.match(/^(\d+)\.\s+/);
+  if (!match) return;
+
+  e.preventDefault();
+
+  const nextNumber = Number(match[1]) + 1;
+  const newValue = value + `\n${nextNumber}. `;
+
+  setForm((prev) => ({
+    ...prev,
+    target: newValue,
+  }));
+}
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -123,43 +146,49 @@ export default function ResultForm({ onCreated }: Props) {
       </div>
 
       {/* Target + Achievement INLINE */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="col-span-2">
-          <label className="block text-sm font-medium mb-1">Target</label>
-          <input
-            className={`border rounded w-full px-3 py-2 text-sm ${
-              !form.target.trim() ? "border-red-500" : ""
-            }`}
-            value={form.target}
-            onChange={(e) =>
-              setForm({ ...form, target: e.target.value })
-            }
-          />
-        </div>
+<div className="grid grid-cols-3 gap-3">
+  <div className="col-span-2">
+    <label className="block text-sm font-medium mb-1">Target</label>
+    <textarea
+      rows={3}
+      placeholder={`Use numbered targets:\n1. Increase sales\n2. Improve process`}
+      className={`border rounded w-full px-3 py-2 text-sm ${
+        !form.target.trim() ? "border-red-500" : ""
+      }`}
+      value={form.target}
+      onChange={(e) =>
+        setForm({ ...form, target: e.target.value })
+      }
+      onKeyDown={handleAutoNumbering}
+    />
+    <p className="text-xs text-gray-500 mt-1">
+      Press <strong>Enter</strong> after <strong>1.</strong> to continue numbering
+    </p>
+  </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Achievement %
-          </label>
-          <input
-            type="number"
-            min={0}
-            max={100}
-            className={`border rounded w-full px-3 py-2 text-sm ${
-              form.achievement < 0 || form.achievement > 100
-                ? "border-red-500"
-                : ""
-            }`}
-            value={form.achievement}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                achievement: Number(e.target.value),
-              })
-            }
-          />
-        </div>
-      </div>
+  <div>
+    <label className="block text-sm font-medium mb-1">
+      Achievement %
+    </label>
+    <input
+      type="number"
+      min={0}
+      max={100}
+      className={`border rounded w-full px-3 py-2 text-sm ${
+        form.achievement < 0 || form.achievement > 100
+          ? "border-red-500"
+          : ""
+      }`}
+      value={form.achievement}
+      onChange={(e) =>
+        setForm({
+          ...form,
+          achievement: Number(e.target.value),
+        })
+      }
+    />
+  </div>
+</div>
 
       {/* Date + Description */}
       <div className="grid md:grid-cols-3 gap-3">

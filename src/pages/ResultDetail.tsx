@@ -36,12 +36,36 @@ export default function ResultDetail() {
   if (loading) return <div className="p-6">Loading...</div>;
   if (!result) return <div className="p-6">Result not found</div>;
 
+  function renderNumberedText(text: string) {
+  if (!text) return null;
+
+  const lines = text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const isNumberedList = lines.every((l) => /^\d+\.\s+/.test(l));
+
+  if (!isNumberedList) {
+    return <span className="whitespace-pre-line">{text}</span>;
+  }
+
+  return (
+    <ol className="list-decimal list-inside space-y-1">
+      {lines.map((line, idx) => (
+        <li key={idx}>{line.replace(/^\d+\.\s+/, "")}</li>
+      ))}
+    </ol>
+  );
+}
+
+
   return (
     <div className="p-6 space-y-6">
       {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-800">
-          Result: {result.target}
+          Meeting: {result.minute.title}
         </h1>
 
         <div className="space-x-2">
@@ -70,19 +94,25 @@ export default function ResultDetail() {
 
       {/* ---- MAIN CONTENT ---- */}
       <div id="result-pdf" className="space-y-6">
+        
         <div className="bg-white rounded-xl shadow p-6 space-y-5">
           {/* Info Section */}
           <div className="space-y-1.5 text-gray-700 text-[15px]">
+              <h1 className="text-3xl font-bold text-gray-800">
+          Meeting Result :
+        </h1>
             <div>
               <span className="font-semibold text-gray-900">Result ID: </span>
               {result.id}
             </div>
 
-            <div>
-              <span className="font-semibold text-gray-900">Target: </span>
-              {result.target}
-            </div>
+<div>
+  <p className="font-semibold text-gray-900 mb-1">Target:</p>
 
+  <div className="p-3 bg-gray-50 border rounded-lg text-gray-800">
+    {renderNumberedText(result.target)}
+  </div>
+</div>
             <div>
               <span className="font-semibold text-gray-900">Achievement: </span>
               {result.achievement}%
